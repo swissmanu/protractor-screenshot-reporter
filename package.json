@@ -1,0 +1,29 @@
+{
+  "name": "protractor-screenshot-reporter",
+  "version": "0.0.1",
+  "description": "Reporter for Protractor. Asks Selenium for a screenshot after every test case and stores it along with test case details.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/swissmanu/protractor-screenshot-reporter"
+  },
+  "dependencies": {
+    "mkdirp": "~0.3.5",
+  },
+  "keywords": [
+    "screenshot",
+    "selenium",
+    "protractor",
+    "jasmine",
+    "reporter"
+  ],
+  "author": "Manuel Alabor <manuel@alabor.me>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/swissmanu/protractor-screenshot-reporter/issues"
+  },
+  "homepage": "https://github.com/swissmanu/protractor-screenshot-reporter"
+}
