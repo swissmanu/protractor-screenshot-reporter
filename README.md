@@ -17,13 +17,11 @@ In your Protractor configuration file, register `protractor-screenshot-reporter`
 var ScreenShotReporter = require('protractor-screenshot-reporter');
 
 exports.config = {
-
 	// your config here ...
 
 	onPrepare: function() {
-		// Add a screenshot reporter and store screenshots into
-		// `./test/screenshots`:
-		jasmine.getEnv().addReporter(new ScreenShotReporter('./test/screenshots'));
+		// Add a screenshot reporter and store screenshots to `/tmp/screnshots`:
+		jasmine.getEnv().addReporter(new ScreenShotReporter('/tmp/screenshots'));
 	}
 }
 ```
