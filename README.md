@@ -42,6 +42,45 @@ var reporter = new ScreenShotReporter('/store/screenshots/here');
 
 If the given directory does not exists, it is created automatically as soon as a screenshot needs to be stored.
 
+### Path Builder:
+The function passed as second argument to the constructor is used to build up paths for screenshot files. The following example is the default implementation if you pass nothing:
+
+```javascript
+function defaultPathBuilder(spec, descriptions, results, capabilities) {
+   return util.generateGuid();
+}
+```
+
+Use this as a blueprint for your own path builders.
+
+
+### Meta Data Builder:
+You can modify the contents of the JSON meta data file by passing a function `metaDataBuilder` function as third parameter.
+
+Following example shows the default implementation which is used if you pass nothing. Use it as example when developing your own customizations of it:
+
+```javascript
+function defaultMetaDataBuilder(spec, descriptions, results, capabilities) {
+   var metaData = {
+      description: specDescriptions.join(' ')
+      , passed: results.passed()
+      , os: capabilities.caps_.platform
+      , browser: {
+         name: capabilities.caps_.browserName
+         , version: capabilities.caps_.version
+      }
+   };
+
+   if(results.items_.length > 0) {
+      result = results.items_[0];
+      metaData.message = result.message;
+      metaData.trace = result.trace.stack;
+   }
+
+   return metaData;
+}
+```
+
 
 ## Preprocessing
 A screenshot is saved as PNG image using a generated [GUID](http://de.wikipedia.org/wiki/Globally_Unique_Identifier) as filename. Along with the image, a JSON file with a matching filename is created.
