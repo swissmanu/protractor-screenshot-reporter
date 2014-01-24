@@ -205,7 +205,7 @@ function reportSpecResults(spec) {
 
 				// pathBuilder can return a subfoldered path too. So extract the
 				// directory path without the baseName
-				, directory = path.dirname(baseName);
+				, directory = path.dirname(screenShotPath);
 
 
 			metaData.screenShotFile = screenShotPath;
