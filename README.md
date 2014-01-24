@@ -55,7 +55,7 @@ Use this as a blueprint for your own path builders.
 
 
 ### Meta Data Builder:
-You can modify the contents of the JSON meta data file by passing a function `metaDataBuilder` function as third parameter.
+You can modify the contents of the JSON meta data file by passing a function `metaDataBuilder` function as third constructor parameter.
 
 Following example shows the default implementation which is used if you pass nothing. Use it as example when developing your own customizations of it:
 
