@@ -1,10 +1,7 @@
 # Screenshot Reporter for Protractor
-Running functional E2E tests using [Protractor](https://github.com/angular/protractor) is nice. Executing them on a remote and/or virtualized [Selenium](http://docs.seleniumhq.org/) Grid improves the productivity even more.
-But at least when a test case fails, you may become curious about the actual rendered output of the browser which runned the test.
+Use the screenshot reporter to capture screenshots from your [Selenium](http://docs.seleniumhq.org/) nodes after each executed [Protractor](https://github.com/angular/protractor) test case.
 
-The `protractor-screenshot-reporter` creates a screenshot for each executed test. Along with a JSON file containining the test outcome, it gets saved on the machine which runs Protractor.
-
-This allows a deeper analysis of what happend during a failed test.
+Use meta data stored along with the screenshots to create extensive and human readable test reports.
 
 
 ## Usage
@@ -32,54 +29,52 @@ exports.config = {
 ```
 
 ## Configuration
-### Target directory
+### Target Directory (mandatory)
 You have to pass a directory path as parameter when creating a new instance of
 the screenshot reporter:
 
 ```javascript
-var reporter = new ScreenShotReporter('/store/screenshots/here');
+var reporter = new ScreenShotReporter('/tmp/screenshots');
 ```
 
 If the given directory does not exists, it is created automatically as soon as a screenshot needs to be stored.
 
-### Path Builder:
-The function passed as second argument to the constructor is used to build up paths for screenshot files. The following example is the default implementation if you pass nothing:
+### Path Builder (optional)
+The function passed as second argument to the constructor is used to build up paths for screenshot files:
 
 ```javascript
-function defaultPathBuilder(spec, descriptions, results, capabilities) {
-   return util.generateGuid();
-}
-```
+var path = require('path');
 
-Use this as a blueprint for your own path builders.
-
-
-### Meta Data Builder:
-You can modify the contents of the JSON meta data file by passing a function `metaDataBuilder` function as third constructor parameter.
-
-Following example shows the default implementation which is used if you pass nothing. Use it as example when developing your own customizations of it:
-
-```javascript
-function defaultMetaDataBuilder(spec, descriptions, results, capabilities) {
-   var metaData = {
-      description: specDescriptions.join(' ')
-      , passed: results.passed()
-      , os: capabilities.caps_.platform
-      , browser: {
-         name: capabilities.caps_.browserName
-         , version: capabilities.caps_.version
-      }
-   };
-
-   if(results.items_.length > 0) {
-      result = results.items_[0];
-      metaData.message = result.message;
-      metaData.trace = result.trace.stack;
+new ScreenShotReporter(
+   '/tmp/screenshots'
+   , function pathBuilder(spec, descriptions, results, capabilities) {
+      // Return '<browser>/<specname>' as path for screenshots:
+      // Example: 'firefox/list-should work'.
+      return path.join(capabilities.caps_.browser, descriptions.join('-'));
    }
-
-   return metaData;
-}
+);
 ```
+If you omit the path builder, a [GUID](http://de.wikipedia.org/wiki/Globally_Unique_Identifier) is used by default instead.
+
+
+### Meta Data Builder (optional)
+You can modify the contents of the JSON meta data file by passing a function `metaDataBuilder` function as third constructor parameter:
+
+```javascript
+new ScreenShotReporter(
+   '/tmp/screenshots'
+   , undefined
+   , function metaDataBuilder(spec, descriptions, results, capabilities) {
+      // Return the description of the spec and if it has passed or not:
+      return {
+         description: descriptions.join(' ')
+         , passed: results.passed()
+      };
+   }
+);
+```
+
+If you omit the meta data builder, the default implementation is used (see https://github.com/swissmanu/protractor-screenshot-reporter/blob/master/index.js#L42).
 
 
 ## Preprocessing
