@@ -1,7 +1,7 @@
 # Screenshot Reporter for Protractor
 Use the screenshot reporter to capture screenshots from your [Selenium](http://docs.seleniumhq.org/) nodes after each executed [Protractor](https://github.com/angular/protractor) test case.
 
-Use meta data stored along with the screenshots to create extensive and human readable test reports.
+Use meta data stored as JSON along with the screenshots to create extensive and human readable test reports.
 
 
 ## Usage
@@ -77,10 +77,10 @@ new ScreenShotReporter(
 If you omit the meta data builder, the default implementation is used (see https://github.com/swissmanu/protractor-screenshot-reporter/blob/master/index.js#L42).
 
 
-## Preprocessing
-A screenshot is saved as PNG image using a generated [GUID](http://de.wikipedia.org/wiki/Globally_Unique_Identifier) as filename. Along with the image, a JSON file with a matching filename is created.
+## Postprocess Meta Data
+A screenshot is saved as PNG image. Along with it, a JSON file with a matching filename is created.
 
-The JSON file contains the test outcome and further information about the Selenium machine which executed the test case:
+By default, the JSON file contains the test outcome and further information about the Selenium machine which executed the test case:
 
 ```json
 {
@@ -98,7 +98,7 @@ The JSON file contains the test outcome and further information about the Seleni
 ```
 By parsing these JSON files in a preprocessing step, you can generate a human readable test report.
 
-*Preprocessing is not a functionality of `protractor-screenshot-reporter`. Use [Grunt](http://gruntjs.com) or similar tools to integrate it into your test process.*
+*Postprocessing is not a functionality of `protractor-screenshot-reporter`. Use [Grunt](http://gruntjs.com) or similar tools to integrate it into your test process.*
 
 
 ## License
