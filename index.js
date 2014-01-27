@@ -208,7 +208,7 @@ function reportSpecResults(spec) {
 				, directory = path.dirname(screenShotPath);
 
 
-			metaData.screenShotFile = screenShotPath;
+			metaData.screenShotFile = screenShotFile;
 			mkdirp(directory, function(err) {
 				if(err) {
 					throw new Error('Could not create directory ' + directory);
