@@ -1,4 +1,6 @@
 # Screenshot Reporter for Protractor
+[![NPM version](https://badge.fury.io/js/protractor-screenshot-reporter.png)](http://badge.fury.io/js/protractor-screenshot-reporter)
+
 Use the screenshot reporter to capture screenshots from your [Selenium](http://docs.seleniumhq.org/) nodes after each executed [Protractor](https://github.com/angular/protractor) test case.
 
 Use meta data stored as JSON along with the screenshots to create extensive and human readable test reports.
