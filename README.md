@@ -17,22 +17,26 @@ In your Protractor configuration file, register `protractor-screenshot-reporter`
 var ScreenShotReporter = require('protractor-screenshot-reporter');
 
 exports.config = {
-	// your config here ...
+   // your config here ...
 
-	onPrepare: function() {
-		// Add a screenshot reporter and store screenshots to `/tmp/screnshots`:
-		jasmine.getEnv().addReporter(new ScreenShotReporter('/tmp/screenshots'));
-	}
+   onPrepare: function() {
+      // Add a screenshot reporter and store screenshots to `/tmp/screnshots`:
+      jasmine.getEnv().addReporter(new ScreenShotReporter({
+         baseDirectory: '/tmp/screenshots')
+      });
+   }
 }
 ```
 
 ## Configuration
-### Target Directory (mandatory)
+### Base Directory (mandatory)
 You have to pass a directory path as parameter when creating a new instance of
 the screenshot reporter:
 
 ```javascript
-var reporter = new ScreenShotReporter('/tmp/screenshots');
+var reporter = new ScreenShotReporter({
+   baseDirectory: '/tmp/screenshots'
+});
 ```
 
 If the given directory does not exists, it is created automatically as soon as a screenshot needs to be stored.
@@ -43,14 +47,14 @@ The function passed as second argument to the constructor is used to build up pa
 ```javascript
 var path = require('path');
 
-new ScreenShotReporter(
-   '/tmp/screenshots'
-   , function pathBuilder(spec, descriptions, results, capabilities) {
+new ScreenShotReporter({
+   baseDirectory: '/tmp/screenshots'
+   , pathBuilder: function pathBuilder(spec, descriptions, results, capabilities) {
       // Return '<browser>/<specname>' as path for screenshots:
       // Example: 'firefox/list-should work'.
       return path.join(capabilities.caps_.browser, descriptions.join('-'));
    }
-);
+});
 ```
 If you omit the path builder, a [GUID](http://de.wikipedia.org/wiki/Globally_Unique_Identifier) is used by default instead.
 
@@ -59,21 +63,31 @@ If you omit the path builder, a [GUID](http://de.wikipedia.org/wiki/Globally_Uni
 You can modify the contents of the JSON meta data file by passing a function `metaDataBuilder` function as third constructor parameter:
 
 ```javascript
-new ScreenShotReporter(
-   '/tmp/screenshots'
-   , undefined
-   , function metaDataBuilder(spec, descriptions, results, capabilities) {
+new ScreenShotReporter({
+   baseDirectory: '/tmp/screenshots'
+   , metaDataBuilder: function metaDataBuilder(spec, descriptions, results, capabilities) {
       // Return the description of the spec and if it has passed or not:
       return {
          description: descriptions.join(' ')
          , passed: results.passed()
       };
    }
-);
+});
 ```
 
 If you omit the meta data builder, the default implementation is used (see https://github.com/swissmanu/protractor-screenshot-reporter/blob/master/index.js#L42).
 
+### Screenshots for skipped test cases (optional)
+Since version 0.0.3, you can define if you want capture screenshots from skipped test cases using the `takeScreenShotsForSkippedSpecs` option:
+
+```javascript
+new ScreenShotReporter({
+   baseDirectory: '/tmp/screenshots'
+   , takeScreenShotsForSkippedSpecs: true
+});
+```
+
+Default is `false`.
 
 ## Postprocess Meta Data
 A screenshot is saved as PNG image. Along with it, a JSON file with a matching filename is created.
