@@ -62,107 +62,40 @@ function defaultMetaDataBuilder(spec, descriptions, results, capabilities) {
 
 
 /** Class: ScreenshotReporter
- * Screenshot Reporter for Protractor:
- * Running functional E2E tests using Protractor is nice. Executing them on a
- * remote and/or virtualized Selenium Grid improves the productivity even more.
- * But at least when a test case fails, you may become curious about the actual
- * rendered output of the browser which runned the test.
+ * Creates a new screenshot reporter using the given `options` object.
  *
- * The protractor-screenshot-reporter creates a screenshot for each executed
- * test. Along with a JSON file containining the test outcome, it gets saved on
- * the machine which runs Protractor.
- *
- * This allows a deeper analysis of what happend during a failed test.
- *
- *
- * Usage:
- * The `protractor-screenshot-reporter` is available via npm:
- *
- *     npm install protractor-screenshot-reporter --save-dev
- *
- * In your Protractor configuration file, register
- * `protractor-screenshot-reporter` in Jasmine:
- *
- *     var ScreenShotReporter = require('protractor-screenshot-reporter');
- *
- *     exports.config = {
- *
- *         // your config here ...
- *
- *         onPrepare: function() {
- *             // Add a screenshot reporter and store screenshots into
- *             // `./test/screenshots`:
- *             jasmine.getEnv().addReporter(new ScreenShotReporter('./test/screenshots'));
- *         }
- *    };
- *
- *
- * Configuration: Path Builder:
- * The function passed as second argument is used to build up paths for
- * screenshot files. The following example is the default implementation if you
- * pass nothing:
- *
- *     function defaultPathBuilder(spec, descriptions, results, capabilities) {
- *         return util.generateGuid();
- *     }
- *
- * Use this as a blueprint for your own path builders.
- *
- *
- * Configuration: Meta Data Builder:
- * You can modify the contents of the JSON meta data file by passing a function
- * `metaDataBuilder` function as third parameter.
- * Following example shows the default implementation which is used if you pass
- * nothing. Use it as example when developing your own customizations of it:
- *
- *     function defaultMetaDataBuilder(spec, descriptions, results
- *         , capabilities) {
- *
- *         var metaData = {
- *                 description: specDescriptions.join(' ')
- *                 , passed: results.passed()
- *                 , os: capabilities.caps_.platform
- *                 , browser: {
- *                     name: capabilities.caps_.browserName
- *                     , version: capabilities.caps_.version
- *                 }
- *             };
- *
- *         if(results.items_.length > 0) {
- *             result = results.items_[0];
- *             metaData.message = result.message;
- *             metaData.trace = result.trace.stack;
- *         }
- *
- *         return metaData;
- *     }
- *
+ * For more information, please look at the README.md file.
  *
  * Parameters:
+ *     (Object) options - Object with options as described below.
+ *
+ * Possible options:
  *     (String) baseDirectory - The path to the directory where screenshots are
  *                              stored. If not existing, it gets created.
+ *                              Mandatory.
  *     (Function) pathBuilder - A function which returns a path for a screenshot
- *                              to be stored.
+ *                              to be stored. Optional.
  *     (Function) metaDataBuilder - Function which returns an object literal
  *                                  containing meta data to store along with
- *                                  the screenshot.
+ *                                  the screenshot. Optional.
+ *     (Boolean) takeScreenShotsForSkippedSpecs - Do you want to capture a
+ *                                                screenshot for a skipped spec?
+ *                                                Optional (default: false).
  */
-function ScreenshotReporter(baseDirectory, pathBuilder, metaDataBuilder) {
-	if(!baseDirectory || baseDirectory.length === 0) {
+function ScreenshotReporter(options) {
+	options = options || {};
+
+	if(!options.baseDirectory || options.baseDirectory.length === 0) {
 		throw new Error('Please pass a valid base directory to store the ' +
 			'screenshots into.');
+	} else {
+		this.baseDirectory = options.baseDirectory;
 	}
 
-	if(!pathBuilder) {
-		pathBuilder = defaultPathBuilder;
-	}
-	if(!metaDataBuilder) {
-		metaDataBuilder = defaultMetaDataBuilder;
-	}
-
-	this.baseDirectory = baseDirectory;
-	this.pathBuilder = pathBuilder;
-	this.metaDataBuilder = metaDataBuilder;
+	this.pathBuilder = options.pathBuilder || defaultPathBuilder;
+	this.metaDataBuilder = options.metaDataBuilder || defaultMetaDataBuilder;
+	this.takeScreenShotsForSkippedSpecs =
+		options.takeScreenShotsForSkippedSpecs || false;
 }
 
 /** Function: reportSpecResults
@@ -175,7 +108,12 @@ function ScreenshotReporter(baseDirectory, pathBuilder, metaDataBuilder) {
 ScreenshotReporter.prototype.reportSpecResults =
 function reportSpecResults(spec) {
 	/* global browser */
-	var self = this;
+	var self = this
+		, results = spec.results()
+
+	if(!self.takeScreenShotsForSkippedSpecs && results.skipped) {
+		return;
+	}
 
 	browser.takeScreenshot().then(function (png) {
 		browser.getCapabilities().then(function (capabilities) {
@@ -183,7 +121,7 @@ function reportSpecResults(spec) {
 					spec.suite
 					, [spec.description]
 				)
-				, results = spec.results()
+
 
 				, baseName = self.pathBuilder(
 					spec
