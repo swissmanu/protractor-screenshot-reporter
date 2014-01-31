@@ -24,8 +24,8 @@ exports.config = {
    onPrepare: function() {
       // Add a screenshot reporter and store screenshots to `/tmp/screnshots`:
       jasmine.getEnv().addReporter(new ScreenShotReporter({
-         baseDirectory: '/tmp/screenshots')
-      });
+         baseDirectory: '/tmp/screenshots'
+      }));
    }
 }
 ```
