@@ -96,6 +96,8 @@ function ScreenshotReporter(options) {
 	this.metaDataBuilder = options.metaDataBuilder || defaultMetaDataBuilder;
 	this.takeScreenShotsForSkippedSpecs =
 		options.takeScreenShotsForSkippedSpecs || false;
+	this.takeScreenShotsOnlyForFailedSpecs =
+		options.takeScreenShotsOnlyForFailedSpecs || false;
 }
 
 /** Function: reportSpecResults
@@ -112,6 +114,9 @@ function reportSpecResults(spec) {
 		, results = spec.results()
 
 	if(!self.takeScreenShotsForSkippedSpecs && results.skipped) {
+		return;
+	}
+	if(self.takeScreenShotsOnlyForFailedSpecs && results.passed()) {
 		return;
 	}
 
