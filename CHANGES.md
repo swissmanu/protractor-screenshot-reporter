@@ -1,4 +1,7 @@
 # Changelog
+## Version 0.0.4
+* Added `takeScreenShotsOnlyForFailedSpecs` option. Take screenshots only if spec failed. Thx @actionless.
+
 ## Version 0.0.3
 * Introduced parameter object for reporter constructor
 * Define if you want to create screenshots from skipped test cases using the new `takeScreenShotsForSkippedSpecs` option
