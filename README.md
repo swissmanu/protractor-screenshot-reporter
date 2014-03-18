@@ -91,6 +91,18 @@ new ScreenShotReporter({
 
 Default is `false`.
 
+### Screenshots only for failed test cases (optional)
+Also you can define if you want capture screenshots only from failed test cases using the `takeScreenShotsOnlyForFailedSpecs:` option:
+
+```javascript
+new ScreenShotReporter({
+   baseDirectory: '/tmp/screenshots'
+   , takeScreenShotsOnlyForFailedSpecs: true
+});
+```
+
+Default is `false`.
+
 ## Postprocess Meta Data
 A screenshot is saved as PNG image. Along with it, a JSON file with a matching filename is created.
 
