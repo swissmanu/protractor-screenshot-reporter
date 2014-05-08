@@ -1,4 +1,7 @@
 # Changelog
+## Version 0.0.5
+* Fixed order when fetching descriptions of specs in defaultMetaDataBuilder.
+
 ## Version 0.0.4
 * Added `takeScreenShotsOnlyForFailedSpecs` option. Take screenshots only if spec failed. Thx @actionless.
 

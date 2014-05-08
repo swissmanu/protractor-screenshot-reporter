@@ -41,7 +41,7 @@ function defaultPathBuilder(spec, descriptions, results, capabilities) {
  */
 function defaultMetaDataBuilder(spec, descriptions, results, capabilities) {
 	var metaData = {
-			description: descriptions.join(' ')
+			description: descriptions.reverse().join(' ')
 			, passed: results.passed()
 			, os: capabilities.caps_.platform
 			, browser: {
