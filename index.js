@@ -1,6 +1,7 @@
 var util = require('./lib/util')
 	, mkdirp = require('mkdirp')
-	, path = require('path');
+	, path = require('path')
+	, q = require('q');
 
 /** Function: defaultPathBuilder
  * This function builds paths for a screenshot file. It is appended to the
@@ -14,11 +15,13 @@ var util = require('./lib/util')
  *     (Object) capabilities - WebDrivers capabilities object containing
  *                             in-depth information about the Selenium node
  *                             which executed the test case.
+ *     (Integer) index - When taking more than one screenshot per spec, this
+ *                       index represents the number of this screenshot.
  *
  * Returns:
  *     (String) containing the built path
  */
-function defaultPathBuilder(spec, descriptions, results, capabilities) {
+function defaultPathBuilder(spec, descriptions, results, capabilities, index) {
 	return util.generateGuid();
 }
 
@@ -40,23 +43,16 @@ function defaultPathBuilder(spec, descriptions, results, capabilities) {
  *     (Object) containig meta data to store along with a screenshot
  */
 function defaultMetaDataBuilder(spec, descriptions, results, capabilities) {
-	var metaData = {
-			description: descriptions.reverse().join(' ')
-			, passed: results.passed()
-			, os: capabilities.caps_.platform
-			, browser: {
-				name: capabilities.caps_.browserName
-				, version: capabilities.caps_.version
-			}
-		};
-
-	if(results.items_.length > 0) {
-		var result = results.items_[0];
-		metaData.message = result.message;
-		metaData.trace = result.trace.stack;
-	}
-
-	return metaData;
+	return {
+		description: descriptions.reverse().join(' ')
+		, passed: results.passed()
+		, os: capabilities.caps_.platform
+		, browser: {
+			name: capabilities.caps_.browserName
+			, version: capabilities.caps_.version
+		}
+		, screenShots: spec.screenShotFiles
+	};
 }
 
 
@@ -98,7 +94,81 @@ function ScreenshotReporter(options) {
 		options.takeScreenShotsForSkippedSpecs || false;
 	this.takeScreenShotsOnlyForFailedSpecs =
 		options.takeScreenShotsOnlyForFailedSpecs || false;
+
+	var self = this;
+
+
+	// takes screenshot on each failed expect
+	var originalAddMatcherResult = jasmine.Spec.prototype.addMatcherResult;
+	jasmine.Spec.prototype.addMatcherResult = function() {
+		if (!arguments[0].passed()) {
+			console.log(arguments[0]);
+			self.takeScreenshot(this, arguments[0]);
+		}
+		return originalAddMatcherResult.apply(this, arguments);
+	};
+
 }
+
+ScreenshotReporter.prototype.takeScreenshot = function takeScreenshot(spec, results) {
+	var self = this;
+
+	return browser.takeScreenshot()
+	.then(function(png) {
+
+		if(!self.capabilities) {
+			return browser.getCapabilities()
+			.then(function(capabilities) {
+				self.capabilities = capabilities;
+				self.saveScreenshot(spec, results, capabilities, png);
+			});
+		} else {
+			return q.when(self.saveScreenshot(spec, results, self.capabilities, png));
+		}
+	});
+};
+
+ScreenshotReporter.prototype.saveScreenshot = function saveScreenshot(spec, results, capabilities, png) {
+	//++this.currentScreenshotSession.index;
+
+	var descriptions = util.gatherDescriptions(
+			spec.suite
+			, [spec.description]
+		)
+
+		, baseName = this.pathBuilder(
+			spec
+			, descriptions
+			, results
+			, this.capabilities
+			, spec.screenShotFiles ? spec.screenShotFiles.length : 0
+		)
+
+		, screenShotFile = baseName + '.png'
+		, screenShotPath = path.join(this.baseDirectory, screenShotFile)
+
+		// pathBuilder can return a subfoldered path too. So extract the
+		// directory path without the baseName
+		, directory = path.dirname(screenShotPath);
+
+
+	if(!Array.isArray(spec.screenShotFiles)) {
+		spec.screenShotFiles = [];
+	}
+
+	spec.screenShotFiles.push({
+		file: screenShotFile
+		, results: results
+	});
+
+	mkdirp(directory, function(err) {
+		if(err) {
+			throw new Error('Could not create directory ' + directory);
+		} else {
+			util.storeScreenShot(png, screenShotPath);
+		}
+	});
+};
 
 /** Function: reportSpecResults
  * Called by Jasmine when reporteing results for a test spec. It triggers the
@@ -109,60 +179,34 @@ function ScreenshotReporter(options) {
  */
 ScreenshotReporter.prototype.reportSpecResults =
 function reportSpecResults(spec) {
-	/* global browser */
-	var self = this
-		, results = spec.results()
+	var results = spec.results()
+		, self = this;
 
-	if(!self.takeScreenShotsForSkippedSpecs && results.skipped) {
+	if(!this.takeScreenShotsForSkippedSpecs && results.skipped) {
 		return;
 	}
-	if(self.takeScreenShotsOnlyForFailedSpecs && results.passed()) {
+	if(this.takeScreenShotsOnlyForFailedSpecs && results.passed()) {
 		return;
 	}
 
-	browser.takeScreenshot().then(function (png) {
-		browser.getCapabilities().then(function (capabilities) {
-			var descriptions = util.gatherDescriptions(
-					spec.suite
-					, [spec.description]
-				)
+	this.takeScreenshot(spec, results.items_)
+	.then(function() {
+		var descriptions = util.gatherDescriptions(
+				spec.suite
+				, [spec.description]
+			);
 
+		var metaData = self.metaDataBuilder(
+				spec
+				, descriptions
+				, results
+				, self.capabilities
+			)
+		, metaFile = descriptions.join('_').replace((/\s/g, '_')) + '.json'
+		, metaDataPath = path.join(self.baseDirectory, metaFile);
 
-				, baseName = self.pathBuilder(
-					spec
-					, descriptions
-					, results
-					, capabilities
-				)
-				, metaData = self.metaDataBuilder(
-					spec
-					, descriptions
-					, results
-					, capabilities
-				)
-
-				, screenShotFile = baseName + '.png'
-				, metaFile = baseName + '.json'
-				, screenShotPath = path.join(self.baseDirectory, screenShotFile)
-				, metaDataPath = path.join(self.baseDirectory, metaFile)
-
-				// pathBuilder can return a subfoldered path too. So extract the
-				// directory path without the baseName
-				, directory = path.dirname(screenShotPath);
-
-
-			metaData.screenShotFile = screenShotFile;
-			mkdirp(directory, function(err) {
-				if(err) {
-					throw new Error('Could not create directory ' + directory);
-				} else {
-					util.storeScreenShot(png, screenShotPath);
-					util.storeMetaData(metaData, metaDataPath);
-				}
-			});
-		});
+		util.storeMetaData(metaData, metaDataPath);
 	});
-
 };
 
 module.exports = ScreenshotReporter;
