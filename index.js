@@ -202,7 +202,7 @@ function reportSpecResults(spec) {
 				, results
 				, self.capabilities
 			)
-		, metaFile = descriptions.join('_').replace((/\s/g, '_')) + '.json'
+		, metaFile = util.generateGuid() + '.json'
 		, metaDataPath = path.join(self.baseDirectory, metaFile);
 
 		util.storeMetaData(metaData, metaDataPath);
