@@ -102,12 +102,17 @@ function ScreenshotReporter(options) {
 	var originalAddMatcherResult = jasmine.Spec.prototype.addMatcherResult;
 	jasmine.Spec.prototype.addMatcherResult = function() {
 		if (!arguments[0].passed()) {
-			console.log(arguments[0]);
 			self.takeScreenshot(this, arguments[0]);
 		}
 		return originalAddMatcherResult.apply(this, arguments);
 	};
 
+	// manual screenshots
+	jasmine.Spec.prototype.takeScreenshot = function takeScreenshot(label) {
+		self.takeScreenshot(this, {
+			message: 'Manual Screenshot: ' + (label || 'unnamed')
+		});
+	};
 }
 
 ScreenshotReporter.prototype.takeScreenshot = function takeScreenshot(spec, results) {
@@ -129,8 +134,6 @@ ScreenshotReporter.prototype.takeScreenshot = function takeScreenshot(spec, resu
 };
 
 ScreenshotReporter.prototype.saveScreenshot = function saveScreenshot(spec, results, capabilities, png) {
-	//++this.currentScreenshotSession.index;
-
 	var descriptions = util.gatherDescriptions(
 			spec.suite
 			, [spec.description]
