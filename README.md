@@ -103,6 +103,18 @@ new ScreenShotReporter({
 
 Default is `false`.
 
+### Make decisions at runtime about whether to take screenshots (optional)
+Also you can define if you want capture screenshots from arbitrary information available at runtime by providing a `takeScreenShotYesNo` function:
+
+```javascript
+new ScreenShotReporter({
+   baseDirectory: '/tmp/screenshots'
+   , takeScreenShotYesNo: function (spec, descriptions, results) {
+        return (/screenshot/i.test(descriptions) || !results.passed());   // Take screenshot if test failed or 'screenshot' appears in test description
+      }
+});
+```
+
 ## Postprocess Meta Data
 A screenshot is saved as PNG image. Along with it, a JSON file with a matching filename is created.
 
