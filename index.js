@@ -8,6 +8,7 @@ var util = require('./lib/util')
  * storing a screenshot or JSON meta data file.
  *
  * Parameters:
+ *     (Object) suite - The suite currently reported
  *     (Object) spec - The spec currently reported
  *     (Array) descriptions - The specs and their parent suites descriptions
  *     (Object) result - The result object of the current test spec.
@@ -18,7 +19,7 @@ var util = require('./lib/util')
  * Returns:
  *     (String) containing the built path
  */
-function defaultPathBuilder(spec, descriptions, results, capabilities) {
+function defaultPathBuilder(suite, spec, descriptions, results, capabilities) {
 	return util.generateGuid();
 }
 
@@ -29,6 +30,7 @@ function defaultPathBuilder(spec, descriptions, results, capabilities) {
  * automatially.
  *
  * Parameters:
+ *     (Object) suite - The suite currently reported
  *     (Object) spec - The spec currently reported
  *     (Array) descriptions - The specs and their parent suites descriptions
  *     (Object) result - The result object of the current test spec.
@@ -39,10 +41,10 @@ function defaultPathBuilder(spec, descriptions, results, capabilities) {
  * Returns:
  *     (Object) containig meta data to store along with a screenshot
  */
-function defaultMetaDataBuilder(spec, descriptions, results, capabilities) {
+function defaultMetaDataBuilder(suite, spec, descriptions, results, capabilities) {
 	var metaData = {
 			description: descriptions.reverse().join(' ')
-			, passed: results.passed()
+			, passed: results.status === 'passed'
 			, os: capabilities.caps_.platform
 			, browser: {
 				name: capabilities.caps_.browserName
@@ -50,10 +52,10 @@ function defaultMetaDataBuilder(spec, descriptions, results, capabilities) {
 			}
 		};
 
-	if(results.items_.length > 0) {
-		var result = results.items_[0];
+	if(results.failedExpectations.length > 0) {
+		var result = results.failedExpectations[0];
 		metaData.message = result.message;
-		metaData.trace = result.trace.stack;
+		metaData.trace = result.stack;
 	}
 
 	return metaData;
@@ -98,46 +100,90 @@ function ScreenshotReporter(options) {
 		options.takeScreenShotsForSkippedSpecs || false;
 	this.takeScreenShotsOnlyForFailedSpecs =
 		options.takeScreenShotsOnlyForFailedSpecs || false;
+
+	this.currentSuite = null;
+
+	this.__suites = {};
+	this.__specs = {};
 }
 
-/** Function: reportSpecResults
+ScreenshotReporter.prototype.getSuite =
+function getSuite(suite) {
+	var self = this;
+	self.__suites[suite.id] = util.extend(self.__suites[suite.id] || {}, suite);
+	return self.__suites[suite.id];
+};
+
+ScreenshotReporter.prototype.getSpec =
+function getSpec(spec) {
+	var self = this;
+	self.__specs[spec.id] = util.extend(self.__specs[spec.id] || {}, spec);
+	return self.__specs[spec.id];
+};
+
+ScreenshotReporter.prototype.suiteStarted =
+function suiteStarted(suite) {
+	//todo this doesnt seem to be called...
+	var self = this;
+	suite = getSuite(suite);
+	suite.parentSuite = self.currentSuite;
+	self.currentSuite = suite;
+};
+
+ScreenshotReporter.prototype.suiteDone =
+function suiteDone(suite) {
+	//todo this doesnt seem to be called...
+	var self = this;
+	suite = getSuite(suite);
+	// disabled suite (xdescribe) -- suiteStarted was never called
+	if (suite.parentSuite === undefined) {
+		self.suiteStarted(suite);
+		suite._disabled = true;
+	}
+	self.currentSuite = suite.parentSuite;
+};
+
+/** Function: specDone
  * Called by Jasmine when reporteing results for a test spec. It triggers the
  * whole screenshot capture process and stores any relevant information.
  *
  * Parameters:
  *     (Object) spec - The test spec to report.
  */
-ScreenshotReporter.prototype.reportSpecResults =
-function reportSpecResults(spec) {
+ScreenshotReporter.prototype.specDone =
+function specDone(spec) {
 	/* global browser */
 	var self = this
-		, results = spec.results()
+		, spec = self.getSpec(spec)
+		, suite = self.currentSuite
 
-	if(!self.takeScreenShotsForSkippedSpecs && results.skipped) {
+	if(!self.takeScreenShotsForSkippedSpecs && spec.status === 'skipped') {
 		return;
 	}
-	if(self.takeScreenShotsOnlyForFailedSpecs && results.passed()) {
+	if(self.takeScreenShotsOnlyForFailedSpecs && spec.status === 'passed') {
 		return;
 	}
 
 	browser.takeScreenshot().then(function (png) {
 		browser.getCapabilities().then(function (capabilities) {
 			var descriptions = util.gatherDescriptions(
-					spec.suite
+					spec
 					, [spec.description]
 				)
 
 
 				, baseName = self.pathBuilder(
-					spec
+					suite
+					, spec
 					, descriptions
-					, results
+					, spec
 					, capabilities
 				)
 				, metaData = self.metaDataBuilder(
-					spec
+					suite
+					, spec
 					, descriptions
-					, results
+					, spec
 					, capabilities
 				)
 
