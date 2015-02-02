@@ -125,7 +125,7 @@ ScreenshotReporter.prototype.suiteStarted =
 function suiteStarted(suite) {
 	//todo this doesnt seem to be called...
 	var self = this;
-	suite = getSuite(suite);
+	suite = self.getSuite(suite);
 	suite.parentSuite = self.currentSuite;
 	self.currentSuite = suite;
 };
@@ -134,7 +134,7 @@ ScreenshotReporter.prototype.suiteDone =
 function suiteDone(suite) {
 	//todo this doesnt seem to be called...
 	var self = this;
-	suite = getSuite(suite);
+	suite = self.getSuite(suite);
 	// disabled suite (xdescribe) -- suiteStarted was never called
 	if (suite.parentSuite === undefined) {
 		self.suiteStarted(suite);
