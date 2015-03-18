@@ -54,7 +54,7 @@ new ScreenShotReporter({
    , pathBuilder: function pathBuilder(spec, descriptions, results, capabilities) {
       // Return '<browser>/<specname>' as path for screenshots:
       // Example: 'firefox/list-should work'.
-      return path.join(capabilities.caps_.browser, descriptions.join('-'));
+      return path.join(capabilities.caps_.browserName, descriptions.join('-'));
    }
 });
 ```
