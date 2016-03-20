@@ -22,6 +22,32 @@ function defaultPathBuilder(spec, descriptions, results, capabilities) {
 	return util.generateGuid();
 }
 
+/** Function: structuredPathBuilder
+ * This function builds paths for a screenshot file based on the OS, the
+ * browser and the browser version. It is appended to the
+ * constructors base directory and gets prependend with `.png` or `.json` when
+ * storing a screenshot or JSON meta data file.
+ *
+ * Parameters:
+ *     (Object) spec - The spec currently reported
+ *     (Array) descriptions - The specs and their parent suites descriptions
+ *     (Object) result - The result object of the current test spec.
+ *     (Object) capabilities - WebDrivers capabilities object containing
+ *                             in-depth information about the Selenium node
+ *                             which executed the test case.
+ *
+ * Returns:
+ *     (String) containing the built path
+ */
+function structuredPathBuilder(spec, descriptions, results, capabilities) {
+	// Only the major browser version
+	var browserVersion = capabilities.caps_.version.substring(0, capabilities.caps_.version.indexOf('.') || capabilities.caps_.version.length);
+	var pathStr = capabilities.caps_.platform + path.sep + capabilities.caps_.browserName + path.sep + 
+			browserVersion + path.sep; + util.generateGuid();
+	var filename = spec.id + '-' + descriptions.join('_');
+	return pathStr + path.sep + filename;
+}
+
 /** Function: defaultMetaDataBuilder
  * Uses passed information to generate a meta data object which can be saved
  * along with a screenshot.
@@ -73,6 +99,8 @@ function defaultMetaDataBuilder(spec, descriptions, results, capabilities) {
  *     (String) baseDirectory - The path to the directory where screenshots are
  *                              stored. If not existing, it gets created.
  *                              Mandatory.
+ *     (Boolean) useStructuredPath - Whether to store under OS/Browser/Version
+ *                              paths.
  *     (Function) pathBuilder - A function which returns a path for a screenshot
  *                              to be stored. Optional.
  *     (Function) metaDataBuilder - Function which returns an object literal
@@ -91,8 +119,8 @@ function ScreenshotReporter(options) {
 	} else {
 		this.baseDirectory = options.baseDirectory;
 	}
-
-	this.pathBuilder = options.pathBuilder || defaultPathBuilder;
+	this.pathBuilder = options.useStructuredPath ? structuredPathBuilder : defaultPathBuilder;
+	this.pathBuilder = options.pathBuilder || this.pathBuilder;
 	this.metaDataBuilder = options.metaDataBuilder || defaultMetaDataBuilder;
 	this.takeScreenShotsForSkippedSpecs =
 		options.takeScreenShotsForSkippedSpecs || false;
