@@ -68,7 +68,7 @@ function structuredPathBuilder(spec, descriptions, results, capabilities) {
 function defaultMetaDataBuilder(spec, descriptions, results, capabilities) {
 	var metaData = {
 			description: descriptions.reverse().join(' ')
-			, passed: results.passed()
+			, passed: results.passedExpectations
 			, os: capabilities.caps_.platform
 			, browser: {
 				name: capabilities.caps_.browserName
@@ -76,10 +76,13 @@ function defaultMetaDataBuilder(spec, descriptions, results, capabilities) {
 			}
 		};
 
-	if(results.items_.length > 0) {
-		var result = results.items_[0];
+	if(results.failedExpectations.length > 0) {
+		var result = results.failedExpectations[0];
 		metaData.message = result.message;
-		metaData.trace = result.trace.stack;
+		metaData.trace = result.stack;
+	}else if(results.passedExpectations.length > 0) {
+		var result = results.passedExpectations[0];
+		metaData.message = result.message;
 	}
 
 	return metaData;
@@ -135,45 +138,35 @@ function ScreenshotReporter(options) {
  * Parameters:
  *     (Object) spec - The test spec to report.
  */
-ScreenshotReporter.prototype.reportSpecResults =
-function reportSpecResults(spec) {
+ScreenshotReporter.prototype.specDone =
+function reportSpecResults(results) {
 	/* global browser */
-	var self = this
-		, results = spec.results()
-
+	var self = this;
 	if(!self.takeScreenShotsForSkippedSpecs && results.skipped) {
 		return;
 	}
-	if(self.takeScreenShotsOnlyForFailedSpecs && results.passed()) {
+	if(self.takeScreenShotsOnlyForFailedSpecs && !results.failedExpectation) {
 		return;
 	}
-
 	browser.takeScreenshot().then(function (png) {
 		browser.getCapabilities().then(function (capabilities) {
-			var descriptions = util.gatherDescriptions(
-					spec.suite
-					, [spec.description]
-				)
-
-
+			var descriptions = util.gatherDescriptions(results, [])
 				, baseName = self.pathBuilder(
-					spec
+					results
 					, descriptions
 					, results
 					, capabilities
 				)
 				, metaData = self.metaDataBuilder(
-					spec
+					results
 					, descriptions
 					, results
 					, capabilities
 				)
-
 				, screenShotFile = baseName + '.png'
 				, metaFile = baseName + '.json'
 				, screenShotPath = path.join(self.baseDirectory, screenShotFile)
 				, metaDataPath = path.join(self.baseDirectory, metaFile)
-
 				// pathBuilder can return a subfoldered path too. So extract the
 				// directory path without the baseName
 				, directory = path.dirname(screenShotPath);
