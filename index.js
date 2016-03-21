@@ -45,7 +45,7 @@ function structuredPathBuilder(spec, descriptions, results, capabilities) {
 	var pathStr = capabilities.caps_.platform + path.sep + capabilities.caps_.browserName + path.sep + 
 			browserVersion + path.sep; + util.generateGuid();
 	var filename = descriptions.join('_');
-	return pathStr + path.sep + filename;
+	return (pathStr + path.sep + filename).toLowerCase();
 }
 
 /** Function: defaultMetaDataBuilder
