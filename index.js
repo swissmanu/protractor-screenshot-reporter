@@ -44,7 +44,7 @@ function structuredPathBuilder(spec, descriptions, results, capabilities) {
 	var browserVersion = capabilities.caps_.version.substring(0, capabilities.caps_.version.indexOf('.') || capabilities.caps_.version.length);
 	var pathStr = capabilities.caps_.platform + path.sep + capabilities.caps_.browserName + path.sep + 
 			browserVersion + path.sep; + util.generateGuid();
-	var filename = spec.id + '-' + descriptions.join('_');
+	var filename = descriptions.join('_');
 	return pathStr + path.sep + filename;
 }
 
