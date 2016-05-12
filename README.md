@@ -5,6 +5,8 @@ Use the screenshot reporter to capture screenshots from your [Selenium](http://d
 
 Use meta data stored as JSON along with the screenshots to create extensive and human readable test reports.
 
+## UNMAINTAINED
+This project is currently unmaintained. Please get in contact with me if you would like to take over maintainance and further development of `protractor-screenshot-reporter`.
 
 ## Usage
 The `protractor-screenshot-reporter` is available via npm:
