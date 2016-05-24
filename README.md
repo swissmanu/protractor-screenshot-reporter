@@ -69,7 +69,7 @@ You can modify the contents of the JSON meta data file by passing a function `me
 ```javascript
 new ScreenShotReporter({
    baseDirectory: '/tmp/screenshots'
-   , metaDataBuilder: function metaDataBuilder(spec, descriptions, results, capabilities) {
+   , metaDataBuilder: function metaDataBuilder(suite, spec, descriptions, results, capabilities) {
       // Return the description of the spec and if it has passed or not:
       return {
          description: descriptions.join(' ')
