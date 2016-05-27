@@ -2,6 +2,7 @@ var util = require('./lib/util')
 	, mkdirp = require('mkdirp')
 	, path = require('path');
 
+
 /** Function: defaultPathBuilder
  * This function builds paths for a screenshot file. It is appended to the
  * constructors base directory and gets prependend with `.png` or `.json` when
@@ -10,7 +11,7 @@ var util = require('./lib/util')
  * Parameters:
  *     (Object) spec - The spec currently reported
  *     (Array) descriptions - The specs and their parent suites descriptions
- *     (Object) result - The result object of the current test spec.
+ *     (Object) results - The result object of the current test spec.
  *     (Object) capabilities - WebDrivers capabilities object containing
  *                             in-depth information about the Selenium node
  *                             which executed the test case.
@@ -31,13 +32,13 @@ function defaultPathBuilder(spec, descriptions, results, capabilities) {
  * Parameters:
  *     (Object) spec - The spec currently reported
  *     (Array) descriptions - The specs and their parent suites descriptions
- *     (Object) result - The result object of the current test spec.
+ *     (Object) results - The result object of the current test spec.
  *     (Object) capabilities - WebDrivers capabilities object containing
  *                             in-depth information about the Selenium node
  *                             which executed the test case.
  *
  * Returns:
- *     (Object) containig meta data to store along with a screenshot
+ *     (Object) containing meta data to store along with a screenshot
  */
 function defaultMetaDataBuilder(spec, descriptions, results, capabilities) {
 	var metaData = {
@@ -60,6 +61,21 @@ function defaultMetaDataBuilder(spec, descriptions, results, capabilities) {
 }
 
 
+/** Function: defaultScreenshotYesNo
+ * Decides whether to capture a screenshot of this test based on information
+ * available at runtime
+ *
+ * Parameters:
+ *     (Object)  spec - The spec currently reported
+ *     (Array)   descriptions - The specs and their parent suites descriptions
+ *     (Object)  results - The result object of the current test spec
+ *
+ * Returns:
+ *     (Boolean) Do we want a screenshot for this test?
+ */
+function defaultScreenshotYesNo(spec, descriptions, results) {
+  return true;           // Take the screenshot
+}
 
 /** Class: ScreenshotReporter
  * Creates a new screenshot reporter using the given `options` object.
@@ -78,6 +94,9 @@ function defaultMetaDataBuilder(spec, descriptions, results, capabilities) {
  *     (Function) metaDataBuilder - Function which returns an object literal
  *                                  containing meta data to store along with
  *                                  the screenshot. Optional.
+ *     (Function) takeScreenShotYN - Function which returns a boolean that
+ *                                   determines whether to take the screenshot.
+ *                                   Optional.
  *     (Boolean) takeScreenShotsForSkippedSpecs - Do you want to capture a
  *                                                screenshot for a skipped spec?
  *                                                Optional (default: false).
@@ -94,6 +113,7 @@ function ScreenshotReporter(options) {
 
 	this.pathBuilder = options.pathBuilder || defaultPathBuilder;
 	this.metaDataBuilder = options.metaDataBuilder || defaultMetaDataBuilder;
+	this.takeScreenShotYesNo = options.takeScreenShotYesNo || defaultScreenshotYesNo;
 	this.takeScreenShotsForSkippedSpecs =
 		options.takeScreenShotsForSkippedSpecs || false;
 	this.takeScreenShotsOnlyForFailedSpecs =
@@ -101,7 +121,7 @@ function ScreenshotReporter(options) {
 }
 
 /** Function: reportSpecResults
- * Called by Jasmine when reporteing results for a test spec. It triggers the
+ * Called by Jasmine when reporting results for a test spec. It triggers the
  * whole screenshot capture process and stores any relevant information.
  *
  * Parameters:
@@ -111,7 +131,7 @@ ScreenshotReporter.prototype.reportSpecResults =
 function reportSpecResults(spec) {
 	/* global browser */
 	var self = this
-		, results = spec.results()
+		, results = spec.results();
 
 	if(!self.takeScreenShotsForSkippedSpecs && results.skipped) {
 		return;
@@ -120,49 +140,52 @@ function reportSpecResults(spec) {
 		return;
 	}
 
-	browser.takeScreenshot().then(function (png) {
-		browser.getCapabilities().then(function (capabilities) {
-			var descriptions = util.gatherDescriptions(
-					spec.suite
-					, [spec.description]
-				)
+  var descriptions = util.gatherDescriptions(
+    spec.suite
+    , [spec.description]
+  );
+
+  if (!self.takeScreenShotYesNo(spec, descriptions, results)) {
+    return;
+  }
+
+  browser.takeScreenshot().then(function (png) {
+    browser.getCapabilities().then(function (capabilities) {
+
+    var baseName = self.pathBuilder(
+          spec
+          , descriptions
+          , results
+          , capabilities
+        )
+        , metaData = self.metaDataBuilder(
+          spec
+          , descriptions
+          , results
+          , capabilities
+        )
+
+        , screenShotFile = baseName + '.png'
+        , metaFile = baseName + '.json'
+        , screenShotPath = path.join(self.baseDirectory, screenShotFile)
+        , metaDataPath = path.join(self.baseDirectory, metaFile)
+
+      // pathBuilder can return a subfoldered path too. So extract the
+      // directory path without the baseName
+        , directory = path.dirname(screenShotPath);
 
 
-				, baseName = self.pathBuilder(
-					spec
-					, descriptions
-					, results
-					, capabilities
-				)
-				, metaData = self.metaDataBuilder(
-					spec
-					, descriptions
-					, results
-					, capabilities
-				)
-
-				, screenShotFile = baseName + '.png'
-				, metaFile = baseName + '.json'
-				, screenShotPath = path.join(self.baseDirectory, screenShotFile)
-				, metaDataPath = path.join(self.baseDirectory, metaFile)
-
-				// pathBuilder can return a subfoldered path too. So extract the
-				// directory path without the baseName
-				, directory = path.dirname(screenShotPath);
-
-
-			metaData.screenShotFile = screenShotFile;
-			mkdirp(directory, function(err) {
-				if(err) {
-					throw new Error('Could not create directory ' + directory);
-				} else {
-					util.storeScreenShot(png, screenShotPath);
-					util.storeMetaData(metaData, metaDataPath);
-				}
-			});
-		});
-	});
-
+      metaData.screenShotFile = screenShotFile;
+      mkdirp(directory, function (err) {
+        if (err) {
+          throw new Error('Could not create directory ' + directory);
+        } else {
+          util.storeScreenShot(png, screenShotPath);
+          util.storeMetaData(metaData, metaDataPath);
+        }
+      });
+    });
+  });
 };
 
 module.exports = ScreenshotReporter;
